@@ -1,7 +1,8 @@
-const { 
-    default: makeWASocket, 
-    useMultiFileAuthState, 
-    DisconnectReason, 
+
+const {
+    default: makeWASocket,
+    useMultiFileAuthState,
+    DisconnectReason,
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
     delay
@@ -10,18 +11,14 @@ const pino = require('pino');
 const qrcode = require('qrcode');
 const express = require('express');
 const fs = require('fs');
-const path = require('path');
 const NodeCache = require('node-cache');
 
-// Configuration simple - PLUS BESOIN DU FICHIER config.js
 const config = {
     botName: "META MD BOT",
     owner: "PRECIEUX OKITAKOY",
     ownerNumber: "243894697490",
     prefix: ".",
     footer: "Signature: by PRECIEUX OKITAKOY",
-    
-    // Images manga simplifiées
     mangaImages: {
         generic: [
             "https://images.unsplash.com/photo-1639322537228-f710d846310a?w=800&q=80",
@@ -29,14 +26,12 @@ const config = {
             "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&q=80"
         ]
     },
-    
     getRandomMangaImage: function() {
         const images = this.mangaImages.generic;
         return images[Math.floor(Math.random() * images.length)];
     }
 };
 
-// Créer les dossiers nécessaires
 const folders = ['./session', './temp'];
 folders.forEach(folder => {
     if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true });
@@ -47,12 +42,11 @@ const logger = pino({ level: 'silent' });
 let startTime = Date.now();
 let qrCodeUrl = null;
 let botStatus = 'Déconnecté';
+let sock = null;
 
-// Créer une application Express
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Servir une page web pour le QR code
 app.use(express.static('public'));
 
 app.get('/', (req, res) => {
@@ -189,7 +183,6 @@ app.get('/', (req, res) => {
         </div>
         
         <script>
-            // Auto-refresh toutes les 5 secondes
             setInterval(() => {
                 fetch('/status')
                     .then(res => res.json())
@@ -200,7 +193,6 @@ app.get('/', (req, res) => {
                     });
             }, 5000);
             
-            // Si pas de QR code, vérifier plus souvent
             if (!'${qrCodeUrl}') {
                 setInterval(() => location.reload(), 3000);
             }
@@ -211,7 +203,6 @@ app.get('/', (req, res) => {
     res.send(html);
 });
 
-// API pour obtenir le statut
 app.get('/status', (req, res) => {
     res.json({
         status: botStatus,
@@ -222,7 +213,6 @@ app.get('/status', (req, res) => {
     });
 });
 
-// API de santé pour Render
 app.get('/health', (req, res) => {
     res.json({ 
         status: 'ok', 
@@ -231,32 +221,32 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Démarrer le serveur
 app.listen(PORT, () => {
     console.log(`🌐 Serveur web démarré sur le port ${PORT}`);
     console.log(`🔗 Accédez à: http://localhost:${PORT}`);
-    console.log(`🔗 Sur Render: https://votre-app.render.com`);
 });
 
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('./session');
     const { version } = await fetchLatestBaileysVersion();
 
-    const sock = makeWASocket({
+    sock = makeWASocket({
         version,
         logger,
-        printQRInTerminal: false,
+        printQRInTerminal: true,
         auth: {
             creds: state.creds,
             keys: makeCacheableSignalKeyStore(state.keys, logger),
         },
+        browser: ["Chrome", "Windows", "10.0"],
         msgRetryCounterCache,
         generateHighQualityLinkPreview: true,
         getMessage: async (key) => {
             return null;
         },
-        syncFullHistory: false,
-        browser: ["META MD BOT", "Chrome", "1.0.0"]
+        syncFullHistory: true,
+        fireInitQueries: true,
+        connectTimeoutMs: 60000
     });
 
     sock.ev.on('connection.update', async (update) => {
@@ -266,18 +256,15 @@ async function connectToWhatsApp() {
             botStatus = 'Scanning';
             console.log('📱 QR Code généré');
             
-            // Générer le QR code en base64 pour le web
             try {
                 const qrCodeDataUrl = await qrcode.toDataURL(qr);
                 qrCodeUrl = qrCodeDataUrl;
                 
                 console.log('✅ QR Code prêt pour le web');
                 console.log(`🌐 Scannez-le à: http://localhost:${PORT}`);
-                console.log(`📱 Ou sur Render: https://votre-app.render.com`);
                 
             } catch (error) {
                 console.error('Erreur génération QR:', error);
-                // Fallback
                 require('qrcode-terminal').generate(qr, { small: true });
             }
         }
@@ -307,10 +294,9 @@ async function connectToWhatsApp() {
             console.log('║ 🌐 Interface: http://localhost:' + PORT + ' ║');
             console.log('╚══════════════════════════════════╝');
             
-            // Envoyer un message au propriétaire
             if (config.ownerNumber) {
                 try {
-                    await sock.sendMessage(config.ownerNumber + '@s.whatsapp.net', { 
+                    await sock.sendMessage(config.ownerNumber.replace('+', '') + '@s.whatsapp.net', { 
                         text: `✅ *META MD BOT est maintenant en ligne!*\n\n📱 Connecté avec succès\n⏰ ${new Date().toLocaleString()}\n🌐 Interface: http://localhost:${PORT}\n\n_Signature: by PRECIEUX OKITAKOY_`
                     });
                 } catch (error) {
@@ -322,7 +308,6 @@ async function connectToWhatsApp() {
 
     sock.ev.on('creds.update', saveCreds);
     
-    // Charger les handlers simplifiés
     sock.ev.on('messages.upsert', async ({ messages }) => {
         try {
             const msg = messages[0];
@@ -335,7 +320,6 @@ async function connectToWhatsApp() {
             
             const cmd = text.slice(config.prefix.length).trim().toLowerCase();
             
-            // Réponses basiques
             if (cmd === 'menu' || cmd === 'help') {
                 const menu = `🤖 *META MD BOT*\n\n👨‍💻 Développeur: PRECIEUX OKITAKOY\n🔧 Prefix: ${config.prefix}\n\nCommandes:\n${config.prefix}menu - Ce menu\n${config.prefix}ping - Test\n${config.prefix}alive - Statut\n\n${config.footer}`;
                 
@@ -372,7 +356,6 @@ async function connectToWhatsApp() {
     return sock;
 }
 
-// Gestion des erreurs
 process.on('uncaughtException', (err) => {
     console.error('Erreur non catchée:', err);
 });
@@ -381,7 +364,6 @@ process.on('unhandledRejection', (reason) => {
     console.error('Promesse rejetée:', reason);
 });
 
-// Démarrer le bot
 console.log('🚀 Démarrage de META MD BOT...');
 console.log('👨‍💻 Développeur: PRECIEUX OKITAKOY');
 
