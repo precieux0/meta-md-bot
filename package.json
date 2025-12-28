@@ -1,6 +1,7 @@
+
 {
   "name": "meta-md-bot",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "META MD BOT - Bot WhatsApp avec interface web et thème manga",
   "main": "index.js",
   "scripts": {
@@ -18,15 +19,15 @@
   "dependencies": {
     "@whiskeysockets/baileys": "^6.5.0",
     "qrcode-terminal": "^0.12.0",
-    "axios": "^1.6.0",
     "express": "^4.18.2",
     "qrcode": "^1.5.3",
-    "node-cache": "^5.1.2"
+    "node-cache": "^5.1.2",
+    "pino": "^8.15.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   }
 }
