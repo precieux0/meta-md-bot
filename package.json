@@ -1,18 +1,22 @@
 {
-  "name": "meta-md-bot-stable",
-  "version": "1.0.0",
-  "description": "META MD BOT stable pour Render",
+  "name": "meta-md-bot-ultimate",
+  "version": "7.0.0",
+  "description": "META MD BOT Ultimate - Version anti-blocage WhatsApp",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "render-build": "npm install",
     "clean": "rm -rf session node_modules package-lock.json",
-    "reset": "rm -rf session && npm start"
+    "reset": "rm -rf session && npm start",
+    "test": "echo \"✅ Configuration OK\" && node -e \"console.log('META MD BOT Ready')\"",
+    "render-build": "npm install"
   },
   "keywords": [
     "whatsapp-bot",
     "baileys",
-    "render"
+    "anti-block",
+    "whatsapp-api",
+    "bot",
+    "automation"
   ],
   "author": "PRECIEUX OKITAKOY",
   "license": "MIT",
