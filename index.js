@@ -12,9 +12,29 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const NodeCache = require('node-cache');
-const config = require('./lib/config');
-const moment = require('moment');
-require('moment-duration-format');
+
+// Configuration simple - PLUS BESOIN DU FICHIER config.js
+const config = {
+    botName: "META MD BOT",
+    owner: "PRECIEUX OKITAKOY",
+    ownerNumber: "243894697490",
+    prefix: ".",
+    footer: "Signature: by PRECIEUX OKITAKOY",
+    
+    // Images manga simplifiées
+    mangaImages: {
+        generic: [
+            "https://images.unsplash.com/photo-1639322537228-f710d846310a?w=800&q=80",
+            "https://images.unsplash.com/photo-1639322537501-1d4b6d4f3e8f?w=800&q=80",
+            "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&q=80"
+        ]
+    },
+    
+    getRandomMangaImage: function() {
+        const images = this.mangaImages.generic;
+        return images[Math.floor(Math.random() * images.length)];
+    }
+};
 
 // Créer les dossiers nécessaires
 const folders = ['./session', './temp'];
@@ -202,12 +222,6 @@ app.get('/status', (req, res) => {
     });
 });
 
-// API pour forcer la regénération du QR
-app.get('/generate-qr', (req, res) => {
-    // Cette route pourrait être utilisée pour regénérer le QR
-    res.json({ message: 'QR code actualisé' });
-});
-
 // API de santé pour Render
 app.get('/health', (req, res) => {
     res.json({ 
@@ -231,7 +245,7 @@ async function connectToWhatsApp() {
     const sock = makeWASocket({
         version,
         logger,
-        printQRInTerminal: false, // On désactive l'affichage dans le terminal
+        printQRInTerminal: false,
         auth: {
             creds: state.creds,
             keys: makeCacheableSignalKeyStore(state.keys, logger),
@@ -261,14 +275,9 @@ async function connectToWhatsApp() {
                 console.log(`🌐 Scannez-le à: http://localhost:${PORT}`);
                 console.log(`📱 Ou sur Render: https://votre-app.render.com`);
                 
-                // Afficher aussi dans la console pour backup
-                console.log('🔐 Code QR (pour backup):');
-                console.log(qr);
-                
             } catch (error) {
                 console.error('Erreur génération QR:', error);
-                // Fallback: afficher dans la console
-                console.log('⚠️ QR Code (scanner depuis la console):');
+                // Fallback
                 require('qrcode-terminal').generate(qr, { small: true });
             }
         }
@@ -313,27 +322,69 @@ async function connectToWhatsApp() {
 
     sock.ev.on('creds.update', saveCreds);
     
-    // Charger les handlers
-    sock.ev.on('messages.upsert', require('./lib/handlers')(sock, startTime));
+    // Charger les handlers simplifiés
+    sock.ev.on('messages.upsert', async ({ messages }) => {
+        try {
+            const msg = messages[0];
+            if (!msg.message) return;
+            
+            const from = msg.key.remoteJid;
+            const text = msg.message.conversation || '';
+            
+            if (!text.startsWith(config.prefix)) return;
+            
+            const cmd = text.slice(config.prefix.length).trim().toLowerCase();
+            
+            // Réponses basiques
+            if (cmd === 'menu' || cmd === 'help') {
+                const menu = `🤖 *META MD BOT*\n\n👨‍💻 Développeur: PRECIEUX OKITAKOY\n🔧 Prefix: ${config.prefix}\n\nCommandes:\n${config.prefix}menu - Ce menu\n${config.prefix}ping - Test\n${config.prefix}alive - Statut\n\n${config.footer}`;
+                
+                await sock.sendMessage(from, {
+                    image: { url: config.getRandomMangaImage() },
+                    caption: menu
+                }, { quoted: msg });
+            }
+            
+            else if (cmd === 'ping') {
+                await sock.sendMessage(from, { 
+                    text: `🏓 Pong!\n\n${config.footer}` 
+                }, { quoted: msg });
+            }
+            
+            else if (cmd === 'alive') {
+                const uptime = Date.now() - startTime;
+                const hours = Math.floor(uptime / (1000 * 60 * 60));
+                const minutes = Math.floor((uptime % (1000 * 60 * 60)) / (1000 * 60));
+                
+                const aliveMsg = `✅ *${config.botName} EN LIGNE!*\n\n⏱️ Uptime: ${hours}h ${minutes}m\n👤 Dev: ${config.owner}\n\n${config.footer}`;
+                
+                await sock.sendMessage(from, {
+                    image: { url: config.getRandomMangaImage() },
+                    caption: aliveMsg
+                }, { quoted: msg });
+            }
+            
+        } catch (error) {
+            console.error('Erreur handler:', error);
+        }
+    });
     
     return sock;
 }
 
-// Gestion des erreurs non catchées
+// Gestion des erreurs
 process.on('uncaughtException', (err) => {
     console.error('Erreur non catchée:', err);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('Promesse rejetée non gérée:', reason);
+process.on('unhandledRejection', (reason) => {
+    console.error('Promesse rejetée:', reason);
 });
 
 // Démarrer le bot
 console.log('🚀 Démarrage de META MD BOT...');
 console.log('👨‍💻 Développeur: PRECIEUX OKITAKOY');
-console.log('🎌 Édition Manga: Dandadan, Tokyo Ghoul, etc.');
 
 connectToWhatsApp().catch(err => {
     console.error('Erreur lors de la connexion:', err);
-    process.exit(1);
 });
