@@ -11,7 +11,7 @@ const express = require('express');
 const fs = require('fs');
 const NodeCache = require('node-cache');
 
-// Configuration MINIMALE
+// Configuration
 const config = {
     botName: "META MD BOT",
     owner: "PRECIEUX OKITAKOY",
@@ -20,120 +20,144 @@ const config = {
     footer: "by PRECIEUX OKITAKOY"
 };
 
-// Nettoyage COMPLET
-console.log('🧹 Nettoyage des sessions précédentes...');
+// Nettoyage initial
+console.log('🧹 Initialisation...');
 if (fs.existsSync('./session')) {
-    fs.rmSync('./session', { recursive: true, force: true });
+    try { fs.rmSync('./session', { recursive: true, force: true }); } catch {}
 }
 if (fs.existsSync('./temp')) {
-    fs.rmSync('./temp', { recursive: true, force: true });
+    try { fs.rmSync('./temp', { recursive: true, force: true }); } catch {}
 }
 
-// Créer dossiers frais
+// Créer dossiers
 fs.mkdirSync('./session', { recursive: true });
 fs.mkdirSync('./temp', { recursive: true });
 
-// Initialisation SIMPLE
+// Variables
 const msgRetryCounterCache = new NodeCache();
-const logger = pino({ level: 'error' }); // Seulement les erreurs
-
-let botStatus = 'Initialisation...';
+const logger = pino({ level: 'error' });
+let botStatus = 'Prêt';
 let sock = null;
-let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 3;
 
-// Application Express MINIMALE
+// Application Express
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Route simple
 app.get('/', (req, res) => {
     const html = `
     <!DOCTYPE html>
     <html>
-    <head><meta charset="UTF-8"><title>META MD BOT</title>
+    <head><meta charset="UTF-8">
+    <title>META MD BOT</title>
     <style>
-        body { font-family: Arial; text-align: center; padding: 50px; }
-        .status { padding: 20px; margin: 20px; border-radius: 10px; }
-        .error { background: #ffebee; color: #c62828; border: 2px solid #ef9a9a; }
-        .info { background: #e3f2fd; color: #1565c0; border: 2px solid #90caf9; }
-        .success { background: #e8f5e9; color: #2e7d32; border: 2px solid #a5d6a7; }
+        body { font-family: Arial; text-align: center; padding: 20px; background: #f0f2f5; }
+        .container { max-width: 500px; margin: 50px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+        .status { padding: 15px; margin: 20px 0; border-radius: 8px; font-weight: bold; }
+        .ready { background: #e3f2fd; color: #1565c0; }
+        .connected { background: #e8f5e9; color: #2e7d32; }
+        .scanning { background: #fff3cd; color: #856404; }
+        .error { background: #ffebee; color: #c62828; }
+        .instructions { text-align: left; margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; }
     </style>
     </head>
     <body>
-        <h1>🤖 META MD BOT</h1>
-        <div class="status ${botStatus.includes('Erreur') ? 'error' : botStatus.includes('Connecté') ? 'success' : 'info'}">
-            <h2>${botStatus}</h2>
-            ${botStatus.includes('Erreur') ? 
-                '<p><strong>SOLUTION:</strong><br>1. Déconnectez TOUS les appareils dans WhatsApp<br>2. Redémarrez le bot<br>3. Attendez 5 minutes</p>' 
-                : ''}
+        <div class="container">
+            <h1>🤖 META MD BOT</h1>
+            <div class="status ${botStatus === 'Connecté' ? 'connected' : botStatus === 'Scan QR' ? 'scanning' : botStatus.includes('Erreur') ? 'error' : 'ready'}">
+                📱 ${botStatus}
+            </div>
+            
+            <div class="instructions">
+                <h3>📋 Instructions:</h3>
+                <p>1. Vérifiez le terminal/logs pour le QR Code</p>
+                <p>2. Scannez avec WhatsApp</p>
+                <p>3. Le bot se connectera automatiquement</p>
+                
+                <h3 style="margin-top: 20px;">🔄 Si bloqué:</h3>
+                <p>1. WhatsApp → Paramètres → Appareils connectés</p>
+                <p>2. Déconnectez TOUS les appareils</p>
+                <p>3. Redémarrez le bot</p>
+            </div>
+            
+            <div style="margin-top: 30px; color: #666;">
+                <p>👨‍💻 ${config.owner}</p>
+                <p>📞 ${config.ownerNumber}</p>
+                <p>🚀 Déployé sur Render</p>
+            </div>
         </div>
-        <div style="margin-top: 30px; text-align: left; display: inline-block;">
-            <h3>📋 PROCÉDURE DE RÉPARATION:</h3>
-            <ol>
-                <li>Ouvrez WhatsApp sur votre téléphone</li>
-                <li>Paramètres → Appareils connectés</li>
-                <li>Déconnectez <strong>TOUS</strong> les appareils</li>
-                <li>Fermez WhatsApp complètement</li>
-                <li>Redémarrez WhatsApp</li>
-                <li>Redémarrez ce bot (npm start)</li>
-                <li>Attendez 5 minutes avant de scanner</li>
-            </ol>
-        </div>
-        <p style="margin-top: 30px; color: #666;">
-            👨‍💻 ${config.owner} | 📞 ${config.ownerNumber}
-        </p>
+        
+        <script>
+            // Auto-refresh toutes les 10 secondes
+            setInterval(() => {
+                fetch('/health')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status !== '${botStatus}') {
+                            location.reload();
+                        }
+                    });
+            }, 10000);
+        </script>
     </body>
     </html>`;
     res.send(html);
 });
 
+// API santé
 app.get('/health', (req, res) => {
-    res.json({ status: botStatus, timestamp: new Date().toISOString() });
+    res.json({ 
+        status: botStatus, 
+        time: new Date().toISOString(),
+        bot: config.botName
+    });
 });
 
-// Fonction de connexion AVEC DÉLAI INITIAL
+// Fonction pour afficher QR dans terminal (SANS qrcode-terminal)
+function displayQRInTerminal(qr) {
+    console.log('\n'.repeat(3));
+    console.log('='.repeat(60));
+    console.log('📱 SCANNEZ CE QR CODE DANS WHATSAPP:');
+    console.log('='.repeat(60));
+    
+    // QR code texte basique (fallback)
+    console.log('QR Code reçu. Ouvrez le lien ci-dessous dans un navigateur');
+    console.log('pour le scanner:');
+    console.log(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qr)}`);
+    
+    console.log('='.repeat(60));
+    console.log('⚠️ Instructions:');
+    console.log('1. Copiez le lien ci-dessus');
+    console.log('2. Ouvrez-le dans un navigateur');
+    console.log('3. Scannez l\'image QR avec WhatsApp');
+    console.log('4. Validez sur votre téléphone');
+    console.log('='.repeat(60));
+    console.log('\nQR String (premier 50 chars):', qr.substring(0, 50) + '...');
+    console.log('\n');
+}
+
+// Connexion WhatsApp
 async function connectToWhatsApp() {
-    reconnectAttempts++;
-    
-    if (reconnectAttempts > MAX_RECONNECT_ATTEMPTS) {
-        botStatus = 'Erreur: Trop de tentatives. Attendez 10 minutes.';
-        console.error('❌ TROP DE TENTATIVES. Attendez 10 minutes.');
-        return;
-    }
-    
-    console.log(`🔄 Tentative de connexion ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}...`);
-    
     try {
+        console.log('🔗 Connexion à WhatsApp...');
+        
         const { state, saveCreds } = await useMultiFileAuthState('./session');
         const { version } = await fetchLatestBaileysVersion();
 
-        // Configuration ULTRA SIMPLE pour éviter les blocages
         sock = makeWASocket({
             version,
             logger,
-            printQRInTerminal: true, // SEULEMENT dans le terminal
+            printQRInTerminal: true, // Le QR s'affiche via Baileys
             auth: {
                 creds: state.creds,
                 keys: makeCacheableSignalKeyStore(state.keys, logger)
             },
-            // Configuration MINIMALE
+            browser: ["Chrome", "Windows", "10.0"],
             connectTimeoutMs: 30000,
-            defaultQueryTimeoutMs: 30000,
-            keepAliveIntervalMs: 10000,
-            emitOwnEvents: false,
-            generateHighQualityLinkPreview: false,
             syncFullHistory: false,
-            fireInitQueries: false,
-            mobile: false,
-            // Browser réaliste MAIS SIMPLE
-            browser: ["Ubuntu", "Chrome", "110.0"],
-            // Désactiver les features problématiques
-            markOnlineOnConnect: false,
-            linkPreviewImageThumbnailWidth: 0,
-            transactionOpts: {
-                maxCommitRetries: 3,
-                delayBetweenTriesMs: 1000
-            },
+            fireInitQueries: true,
+            generateHighQualityLinkPreview: false,
             getMessage: async () => null,
             msgRetryCounterCache
         });
@@ -142,84 +166,36 @@ async function connectToWhatsApp() {
             const { connection, lastDisconnect, qr } = update;
             
             if (qr) {
-                botStatus = 'QR Code disponible dans le TERMINAL';
-                console.log('\n'.repeat(5));
-                console.log('='.repeat(60));
-                console.log('📱 SCANNEZ CE QR CODE MAINTENANT:');
-                console.log('='.repeat(60));
+                botStatus = 'Scan QR';
+                console.log('🔄 QR Code reçu');
                 
-                // Afficher le QR code dans le terminal SEULEMENT
-                require('qrcode-terminal').generate(qr, { small: true });
-                
-                console.log('='.repeat(60));
-                console.log('⚠️  IMPORTANT:');
-                console.log('1. Scannez IMMÉDIATEMENT');
-                console.log('2. Ne quittez pas cette page');
-                console.log('3. Validez sur votre téléphone');
-                console.log('='.repeat(60));
-                console.log('\n');
-                
-                // Attendre 60 secondes max pour le scan
-                setTimeout(() => {
-                    if (connection !== 'open') {
-                        console.log('⏰ QR expiré. Nouvelle tentative...');
-                        if (sock) sock.end();
-                        setTimeout(() => connectToWhatsApp(), 2000);
-                    }
-                }, 60000);
+                // Afficher le QR (Baileys le fait via printQRInTerminal)
+                // + notre fallback
+                displayQRInTerminal(qr);
             }
 
             if (connection === 'close') {
-                const reason = lastDisconnect?.error?.output?.statusCode;
-                console.log(`🔌 Déconnecté (Code: ${reason || 'inconnu'})`);
+                botStatus = 'Déconnecté';
+                console.log('🔌 Déconnexion détectée');
                 
-                // Analyser la raison
-                if (reason === 401) {
-                    botStatus = 'Erreur: Session expirée. Nouveau QR requis.';
-                    console.log('❌ SESSION EXPIREE. Suppression...');
-                    
-                    // Supprimer la session corrompue
-                    if (fs.existsSync('./session')) {
-                        fs.rmSync('./session', { recursive: true, force: true });
-                    }
-                    
-                    // Attendre avant de réessayer
-                    setTimeout(() => {
-                        fs.mkdirSync('./session', { recursive: true });
-                        connectToWhatsApp();
-                    }, 5000);
-                    
-                } else if (reason === 403) {
-                    botStatus = 'ERREUR: COMPTE BLOQUE TEMPORAIREMENT';
-                    console.log('🚫 COMPTE BLOQUE! Attendez 24h.');
-                    
-                } else if (reason === 429) {
-                    botStatus = 'Trop de tentatives. Attendez 5 minutes.';
-                    console.log('⚠️ Trop de requêtes. Pause de 5 minutes...');
-                    setTimeout(() => connectToWhatsApp(), 300000);
-                    
-                } else {
-                    botStatus = 'Déconnecté. Reconnexion...';
-                    const shouldReconnect = reason !== DisconnectReason.loggedOut;
-                    
-                    if (shouldReconnect) {
-                        await delay(3000);
-                        connectToWhatsApp();
-                    }
+                const reason = lastDisconnect?.error?.output?.statusCode;
+                const shouldReconnect = reason !== DisconnectReason.loggedOut;
+                
+                if (shouldReconnect) {
+                    console.log('🔄 Reconnexion dans 5s...');
+                    await delay(5000);
+                    connectToWhatsApp();
                 }
             } 
             else if (connection === 'open') {
-                botStatus = '✅ CONNECTÉ AVEC SUCCÈS!';
-                reconnectAttempts = 0; // Réinitialiser le compteur
+                botStatus = 'Connecté';
+                console.log('\n🎉 CONNEXION RÉUSSIE!');
+                console.log(`🤖 ${config.botName}`);
+                console.log(`👤 ${config.owner}`);
+                console.log(`📅 ${new Date().toLocaleString()}`);
+                console.log(`🌐 URL: ${process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`}`);
                 
-                console.log('\n'.repeat(3));
-                console.log('🎉 🎉 🎉 CONNEXION RÉUSSIE! 🎉 🎉 🎉');
-                console.log('🤖 Bot: ' + config.botName);
-                console.log('👤 Dev: ' + config.owner);
-                console.log('📅 ' + new Date().toLocaleString());
-                console.log('\nLe bot est maintenant opérationnel!');
-                
-                // Message de bienvenue MINIMAL
+                // Notification
                 if (config.ownerNumber && sock) {
                     setTimeout(async () => {
                         try {
@@ -228,61 +204,71 @@ async function connectToWhatsApp() {
                                 text: `✅ ${config.botName} connecté!\n${new Date().toLocaleString()}\n${config.footer}`
                             });
                         } catch (e) {
-                            // Ignorer les erreurs d'envoi
+                            console.log('⚠️ Notification non envoyée');
                         }
-                    }, 3000);
+                    }, 2000);
                 }
             }
         });
 
         sock.ev.on('creds.update', saveCreds);
         
-        // Handler de messages MINIMAL
+        // Messages
         sock.ev.on('messages.upsert', async ({ messages }) => {
             try {
                 const msg = messages[0];
-                if (!msg.message) return;
+                if (!msg.message || !sock) return;
                 
                 const from = msg.key.remoteJid;
                 const text = msg.message.conversation || '';
                 
-                if (text.startsWith(config.prefix + 'ping')) {
-                    await sock.sendMessage(from, { text: '🏓 Pong!' }, { quoted: msg });
+                if (text === config.prefix + 'ping') {
+                    await sock.sendMessage(from, { text: '🏓 Pong!' });
                 }
-                else if (text.startsWith(config.prefix + 'menu')) {
+                else if (text === config.prefix + 'menu') {
                     await sock.sendMessage(from, { 
-                        text: `🤖 ${config.botName}\n👤 ${config.owner}\n🔧 ${config.prefix}ping - Test\n🔧 ${config.prefix}menu - Aide` 
-                    }, { quoted: msg });
+                        text: `🤖 ${config.botName}\n👤 ${config.owner}\n🔧 ${config.prefix}ping\n🔧 ${config.prefix}menu` 
+                    });
                 }
                 
             } catch (error) {
-                // Ignorer les erreurs de messages
+                // Ignorer
             }
         });
         
     } catch (error) {
-        console.error('❌ ERREUR INITIALE:', error.message);
+        console.error('❌ Erreur:', error.message);
         botStatus = 'Erreur: ' + error.message;
         
-        // Supprimer la session corrompue
-        if (fs.existsSync('./session')) {
-            fs.rmSync('./session', { recursive: true, force: true });
-            fs.mkdirSync('./session', { recursive: true });
-        }
-        
-        // Réessayer après délai
-        setTimeout(() => connectToWhatsApp(), 5000);
+        // Réessayer
+        setTimeout(() => {
+            console.log('🔄 Nouvelle tentative...');
+            connectToWhatsApp();
+        }, 10000);
     }
 }
 
-// Démarrer le serveur
+// Démarrer serveur
 app.listen(PORT, () => {
-    console.log(`🌐 Interface: http://localhost:${PORT}`);
-    console.log(`🤖 ${config.botName} par ${config.owner}`);
-    console.log('🔄 Démarrage dans 3 secondes...');
+    console.log('='.repeat(50));
+    console.log('🚀 META MD BOT');
+    console.log('='.repeat(50));
+    console.log(`📡 Port: ${PORT}`);
+    console.log(`👤 Dev: ${config.owner}`);
+    console.log(`🤖 Bot: ${config.botName}`);
+    console.log('='.repeat(50));
+    console.log('🔄 Démarrage dans 3 secondes...\n');
     
-    // DÉLAI CRITIQUE: Attendre avant la première connexion
     setTimeout(() => {
         connectToWhatsApp();
     }, 3000);
+});
+
+// Gestion erreurs
+process.on('uncaughtException', (err) => {
+    console.error('⚠️ Erreur non catchée:', err.message);
+});
+
+process.on('unhandledRejection', (reason) => {
+    console.error('⚠️ Promesse rejetée:', reason);
 });
