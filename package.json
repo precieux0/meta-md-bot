@@ -1,24 +1,29 @@
 {
-  "name": "meta-md-bot-fixed",
-  "version": "3.0.0",
-  "description": "META MD BOT - Version corrigée anti-blocage",
+  "name": "meta-md-bot",
+  "version": "4.0.0",
+  "description": "META MD BOT pour Render - Version stable",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "fresh": "rm -rf session node_modules package-lock.json && npm install && node index.js",
-    "nuke": "rm -rf session temp && npm start",
-    "test": "echo 'Test de base...' && node -e \"console.log('✅ Node OK')\""
+    "build": "echo 'Build step ignoré pour Render'",
+    "render-build": "npm install",
+    "clean": "rm -rf session node_modules package-lock.json"
   },
-  "keywords": ["whatsapp-bot", "baileys"],
+  "keywords": [
+    "whatsapp-bot",
+    "baileys",
+    "render"
+  ],
   "author": "PRECIEUX OKITAKOY",
   "license": "MIT",
   "dependencies": {
     "@whiskeysockets/baileys": "^6.5.0",
     "express": "^4.18.2",
-    "qrcode-terminal": "^0.12.0",
-    "pino": "^8.15.0"
+    "pino": "^8.15.0",
+    "node-cache": "^5.1.2"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": "18.x",
+    "npm": "9.x"
   }
 }
