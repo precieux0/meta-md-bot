@@ -1,0 +1,66 @@
+{
+  "name": "meta-md-bot",
+  "version": "1.3.0",
+  "description": "META MD BOT - Bot WhatsApp avec interface web et thème manga",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "render-build": "npm install",
+    "manga-mode": "echo \"🎌 Mode manga activé!\""
+  },
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "baileys",
+    "whatsapp-bot",
+    "manga",
+    "anime",
+    "dandadan",
+    "tokyo-ghoul",
+    "web-interface"
+  ],
+  "author": "PRECIEUX OKITAKOY",
+  "license": "MIT",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.5.0",
+    "qrcode-terminal": "^0.12.0",
+    "axios": "^1.6.0",
+    "moment": "^2.29.4",
+    "moment-duration-format": "^2.3.2",
+    "node-cache": "^5.1.2",
+    "form-data": "^4.0.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "sharp": "^0.33.0",
+    "ytdl-core": "^4.11.5",
+    "@adiwajshing/keyed-db": "^0.2.4",
+    "pino": "^8.15.0",
+    "qrcode": "^1.5.3",
+    "express": "^4.18.2",
+    "google-it": "^1.6.1",
+    "g-i-s": "^1.6.11",
+    "weather-js": "^2.0.0",
+    "lyrics-finder": "^21.7.0",
+    "mal-scraper": "^2.0.18",
+    "telegraph-uploader": "^1.0.3",
+    "webp-converter": "^2.3.3",
+    "canvas": "^2.11.2",
+    "wa-sticker-formatter": "^4.3.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/precieux0/meta-md-bot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/precieux0/meta-md-bot/issues"
+  },
+  "homepage": "https://github.com/precieux0/meta-md-bot#readme"
+}
