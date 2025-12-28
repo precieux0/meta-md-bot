@@ -1,7 +1,7 @@
 {
-  "name": "meta-md-bot-esm",
-  "version": "5.0.0",
-  "description": "META MD Bot avec support ESM pour Render",
+  "name": "meta-md-bot-pro",
+  "version": "6.0.0",
+  "description": "META MD BOT avec QR Code longue durée sur site web",
   "type": "module",
   "main": "index.js",
   "scripts": {
@@ -9,28 +9,25 @@
     "dev": "node --watch index.js",
     "render-build": "npm install",
     "clean": "rm -rf session node_modules package-lock.json",
-    "test": "node -e \"console.log('✅ ESM test passed')\""
+    "reset": "rm -rf session && npm start"
   },
   "keywords": [
     "whatsapp-bot",
     "baileys",
+    "qr-code",
     "render",
-    "esm"
+    "whatsapp"
   ],
   "author": "PRECIEUX OKITAKOY",
   "license": "MIT",
   "dependencies": {
     "@whiskeysockets/baileys": "^6.5.0",
     "express": "^5.0.0",
-    "pino": "^9.0.0",
+    "qrcode": "^1.5.3",
     "node-cache": "^5.1.2"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/precieux0/meta-md-bot"
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
   }
 }
