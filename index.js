@@ -12,14 +12,8 @@ const express = require('express');
 const fs = require('fs');
 const NodeCache = require('node-cache');
 
-// Configuration
-const config = {
-    botName: "META MD BOT",
-    owner: "PRECIEUX OKITAKOY",
-    ownerNumber: "243894697490",
-    prefix: ".",
-    footer: "Signature: by PRECIEUX OKITAKOY"
-};
+const config = require('./lib/config');
+const handlers = require('./lib/handlers');
 
 // Créer les dossiers
 if (!fs.existsSync('./session')) fs.mkdirSync('./session', { recursive: true });
@@ -32,6 +26,7 @@ let startTime = Date.now();
 let qrCodeUrl = null;
 let botStatus = 'Déconnecté';
 let sock = null;
+let qrTimeout = null;
 
 // Application Express
 const app = express();
@@ -70,6 +65,8 @@ app.get('/', (req, res) => {
             
             <div class="qr-container">
                 ${qrCodeUrl ? `<img src="${qrCodeUrl}" alt="QR Code" width="250" height="250">` : '<p>En attente du QR Code...</p>'}
+                ${qrCodeUrl ? `<p style="font-size:12px;color:#555;margin-top:8px;">QR valable ~10 minutes. Si expiré, rafraîchissez la page.</p>` : ''}
+                ${qrCodeUrl ? `<p><a href="/qr.png" download style="font-size:12px;">⬇️ Télécharger le QR (PNG)</a></p>` : ''}
             </div>
             
             <button class="btn" onclick="location.reload()">🔄 Actualiser</button>
@@ -79,8 +76,8 @@ app.get('/', (req, res) => {
                 <ol>
                     <li>Ouvrez WhatsApp</li>
                     <li>Menu ⋮ → Appareils connectés</li>
-                    <li>Connecter un appareil</li>
-                    <li>Scannez le QR code</li>
+                    <li>Connecter un ou plusieurs appareils (Scan QR)</li>
+                    <li>Scannez le QR code sur la page pour autoriser</li>
                 </ol>
             </div>
             
@@ -95,7 +92,8 @@ app.get('/', (req, res) => {
                 fetch('/status')
                     .then(res => res.json())
                     .then(data => {
-                        if (data.status !== '${botStatus}' || data.qrCodeUrl !== '${qrCodeUrl}') {
+                        // Reload only when QR changes or status changes
+                        if (data.status !== '${botStatus}' || (data.qrCodeUrl && data.qrCodeUrl !== '${qrCodeUrl}')) {
                             location.reload();
                         }
                     });
@@ -157,6 +155,17 @@ async function connectToWhatsApp() {
                 try {
                     const qrCodeDataUrl = await qrcode.toDataURL(qr);
                     qrCodeUrl = qrCodeDataUrl;
+                    // Save PNG to public/qr.png for download and stable serving
+                    const base64Data = qrCodeDataUrl.replace(/^data:image\/png;base64,/, "");
+                    fs.writeFileSync('./public/qr.png', base64Data, 'base64');
+
+                    // Clear any previous timeout and set a 10-minute expiry for the displayed QR
+                    if (qrTimeout) clearTimeout(qrTimeout);
+                    qrTimeout = setTimeout(() => {
+                        qrCodeUrl = null;
+                        try { fs.unlinkSync('./public/qr.png'); } catch (e) {}
+                    }, 10 * 60 * 1000);
+
                     console.log(`✅ QR Code disponible sur http://localhost:${PORT}`);
                 } catch (error) {
                     console.error('Erreur QR:', error);
@@ -165,10 +174,17 @@ async function connectToWhatsApp() {
 
             if (connection === 'close') {
                 botStatus = 'Déconnecté';
-                qrCodeUrl = null;
                 
                 const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-                
+
+                // Ne pas effacer immédiatement le QR si nous prévoyons de nous reconnecter;
+                // cela permet à l'utilisateur plus de temps pour scanner sans retoucher l'architecture
+                if (!shouldReconnect) {
+                    qrCodeUrl = null;
+                    if (qrTimeout) { clearTimeout(qrTimeout); qrTimeout = null; }
+                    try { fs.unlinkSync('./public/qr.png'); } catch (e) {}
+                }
+
                 if (shouldReconnect) {
                     console.log('🔄 Reconnexion dans 5 secondes...');
                     await delay(5000);
@@ -178,6 +194,8 @@ async function connectToWhatsApp() {
             else if (connection === 'open') {
                 botStatus = 'Connecté';
                 qrCodeUrl = null;
+                if (qrTimeout) { clearTimeout(qrTimeout); qrTimeout = null; }
+                try { fs.unlinkSync('./public/qr.png'); } catch (e) {}
                 startTime = Date.now();
                 
                 console.log('✅ BOT CONNECTÉ AVEC SUCCÈS!');
@@ -200,38 +218,8 @@ async function connectToWhatsApp() {
 
         sock.ev.on('creds.update', saveCreds);
         
-        // Gestion des messages
-        sock.ev.on('messages.upsert', async ({ messages }) => {
-            try {
-                const msg = messages[0];
-                if (!msg.message) return;
-                
-                const from = msg.key.remoteJid;
-                const text = msg.message.conversation || '';
-                
-                if (!text.startsWith(config.prefix)) return;
-                
-                const cmd = text.slice(config.prefix.length).trim().toLowerCase();
-                
-                if (cmd === 'menu' || cmd === 'help') {
-                    const menu = `🤖 ${config.botName}\n👨‍💻 ${config.owner}\n🔧 Prefix: ${config.prefix}\n\nCommands:\n${config.prefix}menu - Menu\n${config.prefix}ping - Test\n${config.prefix}alive - Status\n\n${config.footer}`;
-                    await sock.sendMessage(from, { text: menu }, { quoted: msg });
-                }
-                else if (cmd === 'ping') {
-                    await sock.sendMessage(from, { text: '🏓 Pong!\n' + config.footer }, { quoted: msg });
-                }
-                else if (cmd === 'alive') {
-                    const uptime = Date.now() - startTime;
-                    const hours = Math.floor(uptime / (1000 * 60 * 60));
-                    const minutes = Math.floor((uptime % (1000 * 60 * 60)) / (1000 * 60));
-                    const aliveMsg = `✅ ${config.botName} EN LIGNE!\n⏱️ Uptime: ${hours}h ${minutes}m\n👤 ${config.owner}\n${config.footer}`;
-                    await sock.sendMessage(from, { text: aliveMsg }, { quoted: msg });
-                }
-                
-            } catch (error) {
-                console.error('Erreur handler:', error);
-            }
-        });
+        // Déléguer la gestion des messages au handler centralisé
+        sock.ev.on('messages.upsert', handlers(sock, startTime));
         
         return sock;
         

@@ -1,4 +1,6 @@
 const axios = require('axios');
+const config = require('../lib/config');
+const functions = require('../lib/functions');
 
 module.exports = {
     name: 'info',
@@ -6,40 +8,22 @@ module.exports = {
     async weather(sock, from, args, msg) {
         try {
             if (!args[0]) {
-                return await sock.sendMessage(from, { 
-                    text: '❌ Veuillez fournir une ville\nExemple: .weather Paris\n\n_Signature: by PRECIEUX OKITAKOY_' 
-                }, { quoted: msg });
+                return await functions.sendMangaMessage(sock, from, '❌ Veuillez fournir une ville\nExemple: .weather Paris', msg, { mangaType: 'otaku' });
             }
             
             const city = encodeURIComponent(args.join(' '));
             
-            await sock.sendMessage(from, { 
-                text: `⛅ Recherche météo pour ${args.join(' ')}...\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `⛅ Recherche météo pour ${args.join(' ')}...`, msg, { mangaType: 'kawaii' });
             
             // Utiliser OpenWeather API (vous aurez besoin d'une clé API)
             // Pour l'instant, réponse de démonstration
-            const weather = `🌤️ *Météo: ${args.join(' ')}*
+            const weather = `🌤️ *Météo: ${args.join(' ')}*\n\n*Température:* 22°C\n*Ressenti:* 24°C\n*Description:* Partiellement nuageux\n*Humidité:* 65%\n*Vent:* 15 km/h\n*Pression:* 1013 hPa\n\n*Prévisions:*\n🌡️ Min: 18°C | Max: 26°C\n🌅 Lever: 06:45\n🌇 Coucher: 20:30`;
             
-*Température:* 22°C
-*Ressenti:* 24°C
-*Description:* Partiellement nuageux
-*Humidité:* 65%
-*Vent:* 15 km/h
-*Pression:* 1013 hPa
-
-*Prévisions:*
-🌡️ Min: 18°C | Max: 26°C
-🌅 Lever: 06:45
-🌇 Coucher: 20:30
-
-_Signature: by PRECIEUX OKITAKOY_`;
-            
-            await sock.sendMessage(from, { text: weather }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, weather, msg, { mangaType: 'otaku' });
             
         } catch (error) {
             await sock.sendMessage(from, { 
-                text: `❌ Erreur: ${error.message}\n\n_Signature: by PRECIEUX OKITAKOY_` 
+                text: `❌ Erreur: ${error.message}\n\n` 
             }, { quoted: msg });
         }
     },
@@ -47,16 +31,12 @@ _Signature: by PRECIEUX OKITAKOY_`;
     async lyrics(sock, from, args, msg) {
         try {
             if (!args[0]) {
-                return await sock.sendMessage(from, { 
-                    text: '❌ Veuillez fournir un titre de chanson\nExemple: . lyrics Shape of You\n\n_Signature: by PRECIEUX OKITAKOY_' 
-                }, { quoted: msg });
+                return await functions.sendMangaMessage(sock, from, '❌ Veuillez fournir un titre de chanson\nExemple: .lyrics Shape of You', msg, { mangaType: 'kawaii' });
             }
             
             const song = encodeURIComponent(args.join(' '));
             
-            await sock.sendMessage(from, { 
-                text: `🎵 Recherche des paroles: ${args.join(' ')}...\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `🎵 Recherche des paroles: ${args.join(' ')}...`, msg, { mangaType: 'otaku' });
             
             // Utiliser une API de paroles (comme lyrics.ovh)
             const response = await axios.get(`https://api.lyrics.ovh/v1/${song}`);
@@ -68,35 +48,25 @@ _Signature: by PRECIEUX OKITAKOY_`;
                     lyrics += '\n\n... (paroles tronquées)';
                 }
                 
-                await sock.sendMessage(from, { 
-                    text: `🎤 *Paroles: ${args.join(' ')}*\n\n${lyrics}\n\n_Signature: by PRECIEUX OKITAKOY_` 
-                }, { quoted: msg });
+                await functions.sendMangaMessage(sock, from, `🎤 *Paroles: ${args.join(' ')}*\n\n${lyrics}`, msg, { mangaType: 'kawaii' });
             } else {
-                await sock.sendMessage(from, { 
-                    text: `❌ Paroles non trouvées pour: ${args.join(' ')}\n\n_Signature: by PRECIEUX OKITAKOY_` 
-                }, { quoted: msg });
+                await functions.sendMangaMessage(sock, from, `❌ Paroles non trouvées pour: ${args.join(' ')}`, msg, { mangaType: 'otaku' });
             }
             
         } catch (error) {
-            await sock.sendMessage(from, { 
-                text: `❌ Paroles non trouvées\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `❌ Paroles non trouvées`, msg, { mangaType: 'otaku' });
         }
     },
     
     async anime(sock, from, args, msg) {
         try {
             if (!args[0]) {
-                return await sock.sendMessage(from, { 
-                    text: '❌ Veuillez fournir un titre d\'anime\nExemple: .anime Naruto\n\n_Signature: by PRECIEUX OKITAKOY_' 
-                }, { quoted: msg });
+                return await functions.sendMangaMessage(sock, from, '❌ Veuillez fournir un titre d\'anime\nExemple: .anime Naruto', msg, { mangaType: 'otaku' });
             }
             
             const title = encodeURIComponent(args.join(' '));
             
-            await sock.sendMessage(from, { 
-                text: `📺 Recherche anime: ${args.join(' ')}...\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `📺 Recherche anime: ${args.join(' ')}...`, msg, { mangaType: 'kawaii' });
             
             // Utiliser MyAnimeList API ou Jikan
             const response = await axios.get(`https://api.jikan.moe/v4/anime?q=${title}&limit=1`);
@@ -121,66 +91,45 @@ _Signature: by PRECIEUX OKITAKOY_`;
 - MyAnimeList: ${anime.url}
 ${anime.trailer?.url ? `- Trailer: ${anime.trailer.url}` : ''}
 
-_Signature: by PRECIEUX OKITAKOY_`;
+`;
                 
-                await sock.sendMessage(from, { text: info }, { quoted: msg });
+                await functions.sendMangaMessage(sock, from, info, msg, { mangaType: 'otaku' });
                 
-                // Envoyer l'image si disponible
+                // Envoyer l'image si disponible (utiliser la couverture)
                 if (anime.images?.jpg?.image_url) {
                     await sock.sendMessage(from, { 
                         image: { url: anime.images.jpg.image_url },
-                        caption: `🖼️ ${anime.title}\n\n_Signature: by PRECIEUX OKITAKOY_`
+                        caption: `🖼️ ${anime.title}\n\n` + config.footer
                     }, { quoted: msg });
                 }
                 
             } else {
-                await sock.sendMessage(from, { 
-                    text: `❌ Anime non trouvé: ${args.join(' ')}\n\n_Signature: by PRECIEUX OKITAKOY_` 
-                }, { quoted: msg });
+                await functions.sendMangaMessage(sock, from, `❌ Anime non trouvé: ${args.join(' ')}`, msg, { mangaType: 'otaku' });
             }
             
         } catch (error) {
-            await sock.sendMessage(from, { 
-                text: `❌ Erreur: ${error.message}\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `❌ Erreur: ${error.message}`, msg, { mangaType: 'otaku' });
         }
     },
     
     async manga(sock, from, args, msg) {
         try {
             if (!args[0]) {
-                return await sock.sendMessage(from, { 
-                    text: '❌ Veuillez fournir un titre de manga\nExemple: .manga One Piece\n\n_Signature: by PRECIEUX OKITAKOY_' 
-                }, { quoted: msg });
+                return await functions.sendMangaMessage(sock, from, '❌ Veuillez fournir un titre de manga\nExemple: .manga One Piece', msg, { mangaType: 'otaku' });
             }
             
             const title = encodeURIComponent(args.join(' '));
             
-            await sock.sendMessage(from, { 
-                text: `📖 Recherche manga: ${args.join(' ')}...\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `📖 Recherche manga: ${args.join(' ')}...`, msg, { mangaType: 'kawaii' });
             
             // Réponse de démonstration
-            const manga = `📚 *Manga: ${args.join(' ')}*
+            const manga = `📚 *Manga: ${args.join(' ')}*\n\n*Type:* Shonen\n*Statut:* En cours\n*Chapitres:* 1000+\n*Volumes:* 100+\n*Auteur:* Eiichiro Oda\n*Genre:* Action, Aventure, Comédie\n\n*Synopsis:* L'histoire suit les aventures de Monkey D. Luffy, un garçon dont le corps a acquis les propriétés du caoutchouc après avoir mangé par inadvertance un Fruit du Démon...\n\n*Évaluation:* ⭐ 9.0/10`;
             
-*Type:* Shonen
-*Statut:* En cours
-*Chapitres:* 1000+
-*Volumes:* 100+
-*Auteur:* Eiichiro Oda
-*Genre:* Action, Aventure, Comédie
-
-*Synopsis:* L'histoire suit les aventures de Monkey D. Luffy, un garçon dont le corps a acquis les propriétés du caoutchouc après avoir mangé par inadvertance un Fruit du Démon...
-
-*Évaluation:* ⭐ 9.0/10
-
-_Signature: by PRECIEUX OKITAKOY_`;
-            
-            await sock.sendMessage(from, { text: manga }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, manga, msg, { mangaType: 'otaku' });
             
         } catch (error) {
             await sock.sendMessage(from, { 
-                text: `❌ Erreur: ${error.message}\n\n_Signature: by PRECIEUX OKITAKOY_` 
+                text: `❌ Erreur: ${error.message}\n\n` 
             }, { quoted: msg });
         }
     },
@@ -188,16 +137,12 @@ _Signature: by PRECIEUX OKITAKOY_`;
     async character(sock, from, args, msg) {
         try {
             if (!args[0]) {
-                return await sock.sendMessage(from, { 
-                    text: '❌ Veuillez fournir un nom de personnage\nExemple: .character Naruto Uzumaki\n\n_Signature: by PRECIEUX OKITAKOY_' 
-                }, { quoted: msg });
+                return await functions.sendMangaMessage(sock, from, '❌ Veuillez fournir un nom de personnage\nExemple: .character Naruto Uzumaki', msg, { mangaType: 'otaku' });
             }
             
             const name = encodeURIComponent(args.join(' '));
             
-            await sock.sendMessage(from, { 
-                text: `👤 Recherche personnage: ${args.join(' ')}...\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `👤 Recherche personnage: ${args.join(' ')}...`, msg, { mangaType: 'kawaii' });
             
             // Utiliser Jikan API pour les personnages
             const response = await axios.get(`https://api.jikan.moe/v4/characters?q=${name}&limit=1`);
@@ -219,28 +164,24 @@ _Signature: by PRECIEUX OKITAKOY_`;
 *Liens:*
 - MyAnimeList: ${character.url}
 
-_Signature: by PRECIEUX OKITAKOY_`;
+`;
                 
-                await sock.sendMessage(from, { text: info }, { quoted: msg });
+                await functions.sendMangaMessage(sock, from, info, msg, { mangaType: 'otaku' });
                 
                 // Envoyer l'image si disponible
                 if (character.images?.jpg?.image_url) {
                     await sock.sendMessage(from, { 
                         image: { url: character.images.jpg.image_url },
-                        caption: `🖼️ ${character.name}\n\n_Signature: by PRECIEUX OKITAKOY_`
+                        caption: `🖼️ ${character.name}\n\n` + config.footer
                     }, { quoted: msg });
                 }
                 
             } else {
-                await sock.sendMessage(from, { 
-                    text: `❌ Personnage non trouvé: ${args.join(' ')}\n\n_Signature: by PRECIEUX OKITAKOY_` 
-                }, { quoted: msg });
+                await functions.sendMangaMessage(sock, from, `❌ Personnage non trouvé: ${args.join(' ')}`, msg, { mangaType: 'otaku' });
             }
             
         } catch (error) {
-            await sock.sendMessage(from, { 
-                text: `❌ Erreur: ${error.message}\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `❌ Erreur: ${error.message}`, msg, { mangaType: 'otaku' });
         }
     }
 };

@@ -1,4 +1,6 @@
 const axios = require('axios');
+const config = require('../lib/config');
+const functions = require('../lib/functions');
 
 module.exports = {
     name: 'search',
@@ -6,38 +8,28 @@ module.exports = {
     async img(sock, from, args, msg) {
         try {
             if (!args[0]) {
-                return await sock.sendMessage(from, { 
-                    text: '❌ Veuillez fournir une recherche\nExemple: .img chat mignon\n\n_Signature: by PRECIEUX OKITAKOY_' 
-                }, { quoted: msg });
+                return await functions.sendMangaMessage(sock, from, '❌ Veuillez fournir une recherche\nExemple: .img chat mignon', msg, { mangaType: 'otaku' });
             }
             
             const query = encodeURIComponent(args.join(' '));
             
-            await sock.sendMessage(from, { 
-                text: `🔍 Recherche d'images: ${args.join(' ')}...\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `🔍 Recherche d'images: ${args.join(' ')}...`, msg, { mangaType: 'otaku' });
             
             // Utiliser Google Custom Search API ou autre
             const apiUrl = `https://www.googleapis.com/customsearch/v1?q=${query}&searchType=image&key=YOUR_KEY&cx=YOUR_CX`;
             
             // Pour l'instant, réponse de démonstration
-            await sock.sendMessage(from, { 
-                text: `📷 Images trouvées pour: ${args.join(' ')}\n\nUtilisez Google Images ou:\n- unsplash.com\n- pixabay.com\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `📷 Images trouvées pour: ${args.join(' ')}\n\nUtilisez Google Images ou:\n- unsplash.com\n- pixabay.com`, msg, { mangaType: 'kawaii' });
             
         } catch (error) {
-            await sock.sendMessage(from, { 
-                text: `❌ Erreur: ${error.message}\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `❌ Erreur: ${error.message}`, msg, { mangaType: 'otaku' });
         }
     },
     
     async wiki(sock, from, args, msg) {
         try {
             if (!args[0]) {
-                return await sock.sendMessage(from, { 
-                    text: '❌ Veuillez fournir un terme\nExemple: .wiki Albert Einstein\n\n_Signature: by PRECIEUX OKITAKOY_' 
-                }, { quoted: msg });
+                return await functions.sendMangaMessage(sock, from, '❌ Veuillez fournir un terme\nExemple: .wiki Albert Einstein', msg, { mangaType: 'otaku' });
             }
             
             const query = encodeURIComponent(args.join(' '));
@@ -59,23 +51,18 @@ module.exports = {
                 result += `\n\n🔗 *Lien:* ${data.content_urls.desktop.page}`;
             }
             
-            result += '\n\n_Signature: by PRECIEUX OKITAKOY_';
+            result += '\n\n' + config.footer; 
             
-            await sock.sendMessage(from, { text: result }, { quoted: msg });
-            
+            await functions.sendMangaMessage(sock, from, result, msg, { mangaType: 'otaku' });
         } catch (error) {
-            await sock.sendMessage(from, { 
-                text: `❌ Article non trouvé pour: ${args.join(' ')}\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `❌ Article non trouvé pour: ${args.join(' ')}\n\n${error.message}`, msg, { mangaType: 'otaku' });
         }
     },
     
     async github(sock, from, args, msg) {
         try {
             if (!args[0]) {
-                return await sock.sendMessage(from, { 
-                    text: '❌ Veuillez fournir un username GitHub\nExemple: .github precieux\n\n_Signature: by PRECIEUX OKITAKOY_' 
-                }, { quoted: msg });
+                return await functions.sendMangaMessage(sock, from, '❌ Veuillez fournir un username GitHub\nExemple: .github precieux', msg, { mangaType: 'otaku' });
             }
             
             const username = args[0];
@@ -101,48 +88,38 @@ ${data.blog ? `- Blog: ${data.blog}` : ''}
 
 ${data.avatar_url ? '*Avatar disponible*' : ''}
 
-_Signature: by PRECIEUX OKITAKOY_`;
+` + config.footer; 
             
-            await sock.sendMessage(from, { text: profile }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, profile, msg, { mangaType: 'kawaii' });
             
             // Envoyer l'avatar si disponible
             if (data.avatar_url) {
                 await sock.sendMessage(from, { 
                     image: { url: data.avatar_url },
-                    caption: `🖼️ Avatar de ${data.login}\n\n_Signature: by PRECIEUX OKITAKOY_`
+                    caption: `🖼️ Avatar de ${data.login}\n\n` + config.footer
                 }, { quoted: msg });
             }
             
         } catch (error) {
-            await sock.sendMessage(from, { 
-                text: `❌ Utilisateur GitHub non trouvé: ${args[0]}\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `❌ Utilisateur GitHub non trouvé: ${args[0]}`, msg, { mangaType: 'otaku' });
         }
     },
     
     async yts(sock, from, args, msg) {
         try {
             if (!args[0]) {
-                return await sock.sendMessage(from, { 
-                    text: '❌ Veuillez fournir un film/série\nExemple: .yts Inception\n\n_Signature: by PRECIEUX OKITAKOY_' 
-                }, { quoted: msg });
+                return await functions.sendMangaMessage(sock, from, '❌ Veuillez fournir un film/série\nExemple: .yts Inception', msg, { mangaType: 'otaku' });
             }
             
             const query = encodeURIComponent(args.join(' '));
             
-            await sock.sendMessage(from, { 
-                text: `🎬 Recherche YTS: ${args.join(' ')}...\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `🎬 Recherche YTS: ${args.join(' ')}...`, msg, { mangaType: 'otaku' });
             
             // Utiliser l'API YTS ou web scraping
-            await sock.sendMessage(from, { 
-                text: `🍿 Films trouvés pour: ${args.join(' ')}\n\nVisitez: yts.mx\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `🍿 Films trouvés pour: ${args.join(' ')}\n\nVisitez: yts.mx`, msg, { mangaType: 'kawaii' });
             
         } catch (error) {
-            await sock.sendMessage(from, { 
-                text: `❌ Erreur: ${error.message}\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `❌ Erreur: ${error.message}`, msg, { mangaType: 'otaku' });
         }
     }
 };

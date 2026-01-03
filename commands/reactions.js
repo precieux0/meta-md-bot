@@ -1,4 +1,6 @@
 const axios = require('axios');
+const config = require('../lib/config');
+const functions = require('../lib/functions');
 
 module.exports = {
     name: 'reactions',
@@ -15,9 +17,7 @@ module.exports = {
             };
             
             if (!apis[type]) {
-                return await sock.sendMessage(from, { 
-                    text: `❌ Réaction ${type} non disponible\n\n_Signature: by PRECIEUX OKITAKOY_` 
-                }, { quoted: msg });
+                return await functions.sendMangaMessage(sock, from, `❌ Réaction ${type} non disponible`, msg, { mangaType: 'otaku' });
             }
             
             const response = await axios.get(apis[type]);
@@ -40,13 +40,11 @@ module.exports = {
             
             await sock.sendMessage(from, { 
                 image: { url: imageUrl },
-                caption: caption + '\n\n_Signature: by PRECIEUX OKITAKOY_'
+                caption: caption + '\n\n' + config.footer
             }, { quoted: msg });
             
         } catch (error) {
-            await sock.sendMessage(from, { 
-                text: `❌ Erreur: ${error.message}\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `❌ Erreur: ${error.message}`, msg, { mangaType: 'otaku' });
         }
     },
     
@@ -55,33 +53,23 @@ module.exports = {
     },
     
     async dance(sock, from, args, msg) {
-        await sock.sendMessage(from, { 
-            text: '💃 Danse avec moi!\n\n_Signature: by PRECIEUX OKITAKOY_' 
-        }, { quoted: msg });
+        await functions.sendMangaMessage(sock, from, '💃 Danse avec moi!', msg, { mangaType: 'kawaii' });
     },
     
     async smile(sock, from, args, msg) {
-        await sock.sendMessage(from, { 
-            text: '😊 Souriez!\n\n_Signature: by PRECIEUX OKITAKOY_' 
-        }, { quoted: msg });
+        await functions.sendMangaMessage(sock, from, '😊 Souriez!', msg, { mangaType: 'kawaii' });
     },
     
     async blush(sock, from, args, msg) {
-        await sock.sendMessage(from, { 
-            text: '😳 *rougit*\n\n_Signature: by PRECIEUX OKITAKOY_' 
-        }, { quoted: msg });
+        await functions.sendMangaMessage(sock, from, '😳 *rougit*', msg, { mangaType: 'otaku' });
     },
     
     async wink(sock, from, args, msg) {
-        await sock.sendMessage(from, { 
-            text: '😉 Clin d\'œil!\n\n_Signature: by PRECIEUX OKITAKOY_' 
-        }, { quoted: msg });
+        await functions.sendMangaMessage(sock, from, '😉 Clin d\'œil!', msg, { mangaType: 'kawaii' });
     },
     
     async wave(sock, from, args, msg) {
-        await sock.sendMessage(from, { 
-            text: '👋 Salut!\n\n_Signature: by PRECIEUX OKITAKOY_' 
-        }, { quoted: msg });
+        await functions.sendMangaMessage(sock, from, '👋 Salut!', msg, { mangaType: 'kawaii' });
     },
     
     async bonk(sock, from, args, msg) {
@@ -91,9 +79,7 @@ module.exports = {
             text = `🔨 Bonk @${mentioned}! Va en horny jail!`;
         }
         
-        await sock.sendMessage(from, { 
-            text: text + '\n\n_Signature: by PRECIEUX OKITAKOY_' 
-        }, { quoted: msg });
+        await functions.sendMangaMessage(sock, from, text, msg, { mangaType: 'otaku' });
     },
     
     async yeet(sock, from, args, msg) {
@@ -103,8 +89,6 @@ module.exports = {
             text = `💨 Yeet @${mentioned}!`;
         }
         
-        await sock.sendMessage(from, { 
-            text: text + '\n\n_Signature: by PRECIEUX OKITAKOY_' 
-        }, { quoted: msg });
+        await functions.sendMangaMessage(sock, from, text, msg, { mangaType: 'kawaii' });
     }
 };

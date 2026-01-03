@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "start:render": "node index.js",
     "render-build": "npm install"
   },
   "dependencies": {
@@ -15,6 +16,6 @@
     "pino": "^8.15.0"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   }
 }

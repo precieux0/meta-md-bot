@@ -1,6 +1,8 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const config = require('../lib/config');
+const functions = require('../lib/functions');
 
 module.exports = {
     name: 'logo',
@@ -8,16 +10,12 @@ module.exports = {
     async generateLogo(sock, from, args, msg, style) {
         try {
             if (!args[0]) {
-                return await sock.sendMessage(from, { 
-                    text: `❌ Veuillez fournir un texte\nExemple: .${style} META MD BOT\n\n_Signature: by PRECIEUX OKITAKOY_` 
-                }, { quoted: msg });
+                return await functions.sendMangaMessage(sock, from, `❌ Veuillez fournir un texte\nExemple: .${style} META MD BOT`, msg, { mangaType: 'otaku' });
             }
             
             const text = encodeURIComponent(args.join(' '));
             
-            await sock.sendMessage(from, { 
-                text: `🎨 Création du logo ${style}...\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `🎨 Création du logo ${style}...`, msg, { mangaType: 'kawaii' });
             
             // API de génération de logo (exemple)
             const apis = {
@@ -42,14 +40,10 @@ module.exports = {
             
             const styleName = logoStyles[style] || style;
             
-            await sock.sendMessage(from, { 
-                text: `✅ Logo ${styleName}\n\nTexte: ${args.join(' ')}\n\nFonctionnalité en développement.\nUtilisez des sites comme:\n- photofunia.com\n- flamingtext.com\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `✅ Logo ${styleName}\n\nTexte: ${args.join(' ')}\n\nFonctionnalité en développement.\nUtilisez des sites comme:\n- photofunia.com\n- flamingtext.com`, msg, { mangaType: 'kawaii' });
             
         } catch (error) {
-            await sock.sendMessage(from, { 
-                text: `❌ Erreur: ${error.message}\n\n_Signature: by PRECIEUX OKITAKOY_` 
-            }, { quoted: msg });
+            await functions.sendMangaMessage(sock, from, `❌ Erreur: ${error.message}`, msg, { mangaType: 'otaku' });
         }
     },
     
